@@ -1,46 +1,47 @@
 /**
+ * 
+ * 
  * @swagger
  * components:
  *   schemas:
- *     Expense:
- *       type: object
- *       required:
- *         - title
- *         - amount
- *         - category
- *         - paymentMethod
- *         - user
- *       properties:
- *         id:
- *           type: string
- *           description: Auto-generated ID of the expense
- *         title:
- *           type: string
- *           description: Title of the expense
- *         amount:
- *           type: number
- *           description: Amount of the expense
- *         category:
- *           type: string
- *           description: Category of the expense
- *         paymentMethod:
- *           type: string
- *           enum: ["cash", "credit"]
- *           description: Payment method used for the expense
- *         user:
- *           type: string
- *           description: ID of the user associated with the expense
- *         createdAt:
- *           type: string
- *           format: date-time
- *           description: Timestamp when the expense was created
- *         updatedAt:
- *           type: string
- *           format: date-time
- *           description: Timestamp when the expense was last updated
- */
-
-/**
+ *  Expense: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: 'The title of the expense',
+            example: 'Groceries'
+          },
+          amount: {
+            type: 'number',
+            description: 'The amount of the expense',
+            example: 50.0
+          },
+          category: {
+            type: 'string',
+            description: 'The category of the expense',
+            example: 'Food'
+          },
+          paymentMethod: {
+            type: 'string',
+            description: 'The payment method used',
+            enum: ['cash', 'credit'],
+            example: 'cash'
+          },
+          user: {
+            type: 'string',
+            description: 'The user associated with the expense',
+            example: 'UserId123'
+          },
+          date: {
+            type: 'string',
+            format: 'date',
+            description: 'The date of the expense',
+            example: '2024-11-25'
+          }
+        }
+      }
+ *
  * @swagger
  * /api/expenses/add:
  *   post:
@@ -51,16 +52,42 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Expense'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: The title of the expense
+ *                 example: "Groceries"
+ *               amount:
+ *                 type: number
+ *                 description: The amount of the expense
+ *                 example: 50.0
+ *               category:
+ *                 type: string
+ *                 description: The category of the expense
+ *                 example: "Food"
+ *               paymentMethod:
+ *                 type: string
+ *                 description: The method of payment
+ *                 enum: [cash, credit]
+ *                 example: "cash"
  *     responses:
  *       201:
  *         description: Expense added successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Expense'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Expense added successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/Expense'
  *       400:
- *         description: Missing required fields
+ *         description: All fields are required
+ *       500:
+ *         description: Internal server error
  */
 
 /**
@@ -79,67 +106,68 @@
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: CSV file containing expense data
+ *                 description: The CSV file for bulk upload
  *     responses:
- *       201:
+ *       200:
  *         description: Expenses uploaded successfully
- *       400:
- *         description: No file uploaded or invalid CSV data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Expenses uploaded successfully"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Expense'
+ *       500:
+ *         description: Error uploading CSV
  */
 
 /**
  * @swagger
  * /api/expenses/get:
  *   get:
- *     summary: Retrieve a list of expenses with optional filters, sorting, and pagination
+ *     summary: Get a list of expenses with filters, sorting, and pagination
  *     tags: [Expenses]
  *     parameters:
  *       - in: query
  *         name: category
  *         schema:
  *           type: string
- *         description: "Filter expenses by category"
+ *         description: The category of the expense
  *       - in: query
  *         name: paymentMethod
  *         schema:
  *           type: string
- *         description: "Filter expenses by payment method"
+ *         description: The method of payment
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
- *         description: "Filter expenses by start date"
+ *         description: Start date for filtering expenses
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
- *         description: "Filter expenses by end date"
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *         description: "Field to sort by (default: createdAt)"
- *       - in: query
- *         name: order
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *         description: "Sort order (default: desc)"
+ *         description: End date for filtering expenses
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
- *         description: "Page number for pagination (default: 1)"
+ *         description: The page number for pagination
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *         description: "Number of expenses per page (default: 10)"
+ *         description: Number of results per page
  *     responses:
  *       200:
- *         description: List of expenses
+ *         description: A list of expenses
  *         content:
  *           application/json:
  *             schema:
@@ -147,16 +175,20 @@
  *               properties:
  *                 total:
  *                   type: integer
+ *                   description: Total number of expenses
  *                 page:
  *                   type: integer
+ *                   description: Current page number
  *                 limit:
  *                   type: integer
+ *                   description: Number of items per page
  *                 data:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Expense'
+ *       500:
+ *         description: Error fetching expenses
  */
-
 
 /**
  * @swagger
@@ -170,7 +202,7 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the expense to update
+ *         description: The expense ID to be updated
  *     requestBody:
  *       required: true
  *       content:
@@ -180,25 +212,43 @@
  *             properties:
  *               title:
  *                 type: string
+ *                 description: The title of the expense
  *               amount:
  *                 type: number
+ *                 description: The amount of the expense
  *               category:
  *                 type: string
+ *                 description: The category of the expense
  *               paymentMethod:
  *                 type: string
- *                 enum: ["cash", "credit"]
+ *                 description: The method of payment
+ *                 enum: [cash, credit]
  *     responses:
  *       200:
  *         description: Expense updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Expense updated successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/Expense'
+ *       400:
+ *         description: No data provided for update
  *       404:
  *         description: Expense not found
+ *       500:
+ *         description: Error updating expense
  */
 
 /**
  * @swagger
  * /api/expenses/delete/{id}:
  *   delete:
- *     summary: Delete a single expense
+ *     summary: Delete a single expense by ID
  *     tags: [Expenses]
  *     parameters:
  *       - in: path
@@ -206,19 +256,23 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the expense to delete
+ *         description: The expense ID to be deleted
  *     responses:
  *       200:
  *         description: Expense deleted successfully
+ *       400:
+ *         description: Provide an expense ID to delete
  *       404:
- *         description: Expense not found
+ *         description: Expense not found or not authorized to delete
+ *       500:
+ *         description: Error deleting expense
  */
 
 /**
  * @swagger
  * /api/expenses/deleteMany:
  *   delete:
- *     summary: Delete multiple expenses
+ *     summary: Delete multiple expenses by IDs
  *     tags: [Expenses]
  *     requestBody:
  *       required: true
@@ -231,22 +285,47 @@
  *                 type: array
  *                 items:
  *                   type: string
+ *                 description: Array of expense IDs to be deleted
  *     responses:
  *       200:
  *         description: Expenses deleted successfully
+ *       400:
+ *         description: Provide an array of expense IDs to delete
  *       404:
  *         description: No expenses found for deletion
+ *       500:
+ *         description: Error deleting expenses
  */
 
 /**
  * @swagger
  * /api/expenses/stat:
  *   get:
- *     summary: Get statistics for expenses
+ *     summary: Get statistics for expenses in the current month
  *     tags: [Expenses]
  *     responses:
  *       200:
- *         description: Statistics retrieved successfully
+ *         description: Statistics for the current month
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 expenses:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Expense'
+ *                 aggregatedStats:
+ *                   type: object
+ *                   properties:
+ *                     totalAmount:
+ *                       type: number
+ *                       description: Total amount of expenses
+ *                     count:
+ *                       type: integer
+ *                       description: Number of expenses
+ *       500:
+ *         description: Error fetching statistics
  */
 
 const express = require("express");
