@@ -17,6 +17,7 @@ const userRouter = require("./routes/user.route.js");
 const swaggerJsDoc = require("swagger-jsdoc");
 // const swaggerUi = require("swagger-ui-express");
 
+// Swagger options
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -25,10 +26,19 @@ const options = {
       version: "1.0.0",
       description: "API documentation for the Expense Management System",
     },
-    servers: [], 
+    servers: [
+      {
+        url: `https://${process.env.VERCEL_URL || "localhost:3000"}`,
+        description: "Deployed Server",
+      },
+    ],
   },
   apis: ["./routes/*.js"], 
 };
+
+// Middleware to serve Swagger UI
+const specs = swaggerJsDoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Import Redis client
 const redisClient = require("./utils/redisClient.js");
@@ -46,25 +56,9 @@ setupSwagger(app);
 app.use("/api/expenses", expenseRouter);
 app.use("/api/users", userRouter);
 
-const specs = swaggerJsDoc(options);
 
-// Middleware to dynamically set the server URL
-app.use(
-  "/api-docs",
-  (req, res, next) => {
-    if (!options.definition.servers.length) {
-      const protocol = req.protocol;
-      const host = req.get("host");
-      options.definition.servers.push({
-        url: `${protocol}://${host}`,
-        description: "Deployed Server",
-      });
-    }
-    next();
-  },
-  swaggerUi.serve,
-  swaggerUi.setup(specs)
-);
+
+
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Welcome to the Expense Management API" });
