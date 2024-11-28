@@ -17,7 +17,12 @@ const userRouter = require("./routes/user.route.js");
 const swaggerJsDoc = require("swagger-jsdoc");
 // const swaggerUi = require("swagger-ui-express");
 
-// Swagger options
+
+
+// Import Redis client
+const redisClient = require("./utils/redisClient.js");
+
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -28,24 +33,17 @@ const options = {
     },
     servers: [
       {
-        url: `https://${process.env.VERCEL_URL || "localhost:3000"}`,
-        description: "Deployed Server",
-      },
-    ],
+        url: process.env.VERCEL_URL || "http://localhost:3000", 
+        description: "API Server"
+      }
+    ], 
   },
   apis: ["./routes/*.js"], 
 };
 
-// Middleware to serve Swagger UI
-const specs = swaggerJsDoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-
-// Import Redis client
-const redisClient = require("./utils/redisClient.js");
-
-const app = express();
 
 // Middleware
+const app = express();
 app.use(morgan("combined"));
 app.use(helmet());
 app.use(cors());
@@ -55,6 +53,28 @@ setupSwagger(app);
 
 app.use("/api/expenses", expenseRouter);
 app.use("/api/users", userRouter);
+
+const specs = swaggerJsDoc(options);
+
+
+
+// Middleware to dynamically set the server URL
+app.use(
+  "/api-docs",
+  (req, res, next) => {
+    if (!options.definition.servers.length) {
+      const protocol = req.protocol;
+      const host = req.get("host");
+      options.definition.servers.push({
+        url: `${protocol}://${host}`,
+        description: "Deployed Server",
+      });
+    }
+    next();
+  },
+  swaggerUi.serve,
+  swaggerUi.setup(specs)
+);
 
 
 
