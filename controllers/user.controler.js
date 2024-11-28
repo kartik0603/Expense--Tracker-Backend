@@ -98,12 +98,20 @@ const register = async (req, res) => {
   
       const transporter = nodemailer.createTransport({
         service: "gmail",
-        secure: true,
         auth: {
           user: process.env.EMAIL,
           pass: process.env.EMAIL_PASSWORD,
         },
       });
+      
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error("SMTP connection error:", error);
+        } else {
+          console.log("SMTP connection successful");
+        }
+      });
+      
   
       const mailOptions = {
         from: `"Support" <${process.env.EMAIL}>`,
@@ -132,21 +140,27 @@ const register = async (req, res) => {
   
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-      const user = await User.findOne({ email: decoded.email });
+      console.log("Decoded token:", decoded); 
   
+      const user = await User.findOne({ email: decoded.email });
       if (!user) {
         return res.status(404).send({ message: "Invalid token or user not found" });
       }
   
-      user.password = await hashPassword(password);
+      // Update password
+      user.password = await hashPassword(password); 
       await user.save();
   
       return res.status(200).send({ message: "Password reset successfully" });
     } catch (error) {
-      console.error("Error resetting password:", error);
-      res.status(500).send({ message: "Something went wrong", error: error.message });
+      console.error("Error resetting password:", error.message); 
+      if (error.name === "TokenExpiredError") {
+        return res.status(400).send({ message: "Token has expired" });
+      }
+      return res.status(500).send({ message: "Something went wrong", error: error.message });
     }
   };
+  
   
   
   

@@ -29,6 +29,17 @@ const redisClient = redis.createClient({
   no_ready_check: true,   // Disable ready check for faster connection
 });
 
+let isRedisConnected = false;
+
+// Connect to Redis and handle any connection issues
+redisClient.connect().then(() => {
+  isRedisConnected = true;
+  console.log('Redis client connected');
+}).catch(err => {
+  isRedisConnected = false;
+  console.error('Redis connection error:', err);
+});
+
 // Handle Redis client errors
 redisClient.on('error', (err) => {
   console.error('Redis Client Error:', err);
@@ -38,9 +49,9 @@ redisClient.on('error', (err) => {
 process.on('SIGINT', () => {
   console.log('Gracefully shutting down Redis client...');
   redisClient.quit(() => {
-    process.exit(0);
+    console.log('Redis client closed.');
   });
 });
 
 // Export the Redis client for use throughout the app
-module.exports = redisClient;
+module.exports = { redisClient, isRedisConnected };

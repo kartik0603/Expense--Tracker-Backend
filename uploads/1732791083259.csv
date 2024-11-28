@@ -1,0 +1,11 @@
+ExpenseID,Name,Description,Amount,Category,Date,PaymentMethod
+1,Office Supplies,Purchase of pens and notebooks,50,Office,2024-11-28,Credit Card
+2,Internet Bill,Monthly internet service payment,70,Utilities,2024-11-27,Online Transfer
+3,Team Lunch,Lunch with the team at restaurant,200,Entertainment,2024-11-26,Cash
+4,Software Subscription,Annual subscription for project management tool,120,Subscriptions,2024-11-25,Online Transfer
+5,Travel Expense,Taxi fare to client meeting,30,Travel,2024-11-24,Cash
+6,Electricity Bill,Monthly electricity payment,100,Utilities,2024-11-23,Credit Card
+7,Office Decor,Purchase of indoor plants and decorations,150,Office,2024-11-22,Debit Card
+8,Client Gift,Gift purchase for a client,75,Marketing,2024-11-21,Cash
+9,Printer Ink,Refill printer cartridges,45,Office,2024-11-20,Credit Card
+10,Stationery,Additional office stationery items,60,Office,2024-11-19,Online Transfer

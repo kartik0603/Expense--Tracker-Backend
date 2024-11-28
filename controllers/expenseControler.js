@@ -1,16 +1,16 @@
 const Expense = require("../models/expense.schema.js");
 
-const parseCSV = require("../utils/csvParser.js");
-const { promisify } = require('util');
+
+
 const redisClient = require('../utils/redisClient.js');
+const path = require('path');
+const fs = require('fs');
+const csv = require('csv-parser');
+const mongoose = require('mongoose');
+const getExpensesFromCache = require('../utils/cache.getExpenses.Utils.js');
+const moment = require('moment-timezone'); 
 
-// Promisify Redis GET for  async 
-const getAsync = promisify(redisClient.get).bind(redisClient);
 
-// Helper function to generate a cache key on query parameters
-const generateCacheKey = (queryParams) => {
-  return `expenses:${JSON.stringify(queryParams)}`;
-};
 
 // Add a new expense
 const addExpense = async (req, res, next) => {
@@ -43,106 +43,126 @@ const addExpense = async (req, res, next) => {
 };
 
 // Bulk upload expenses from a CSV file
-const bulkUploadExpenses = async (req, res, next) => {
+
+// Function to sanitize rows, ensuring there are no extra spaces
+const sanitizeRow = (row) => {
+  return Object.keys(row).reduce((acc, key) => {
+    acc[key] = row[key] ? row[key].trim() : ''; // Remove extra spaces from values
+    return acc;
+  }, {});
+};
+
+// Bulk upload function for expenses
+const bulkUploadExpenses = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+    // Parse the CSV file
+    const expenses = await parseCSV(req.file.path); 
 
-    // Parse CSV data
-    const expenses = await parseCSV(req.file.path);
-
-    // Validate and format expenses from the CSV file
+    // Process each expense
     const formattedExpenses = expenses.map((exp) => {
-      if (!exp.title || !exp.amount || !exp.category || !exp.paymentMethod) {
+      // console.log(exp); 
+
+      // Sanitize the row data
+      const sanitizedExp = sanitizeRow(exp);
+
+      // Validate required fields
+      if (!sanitizedExp.Name || !sanitizedExp.Amount || !sanitizedExp.Category || !sanitizedExp.PaymentMethod) {
         throw new Error("CSV contains invalid or missing fields");
       }
 
+      // Ensure the Amount is a valid number (parse it to float)
+      const amount = parseFloat(sanitizedExp.Amount);
+      if (isNaN(amount)) {
+        throw new Error(`Invalid amount value: ${sanitizedExp.Amount}`);
+      }
+
+      // Return the formatted expense object for further processing
       return {
-        title: exp.title,
-        amount: parseFloat(exp.amount),
-        category: exp.category,
-        paymentMethod: exp.paymentMethod,
-        user: req.user.id,
+        title: sanitizedExp.Name, 
+        amount: amount, 
+        category: sanitizedExp.Category, 
+        paymentMethod: sanitizedExp.PaymentMethod, 
+        user: req.user.id, 
       };
     });
 
-    // Save the expenses to the database
-    await Expense.insertMany(formattedExpenses);
+    // await Expense.insertMany(formattedExpenses);
 
-    res.status(201).json({ message: "Expenses uploaded successfully" });
-  } catch (err) {
-    next(err);
+
+    // Respond with success message
+    res.status(200).json({ message: 'Expenses uploaded successfully', data: formattedExpenses });
+
+  } catch (error) {
+    console.error(error);
+    // Return an error response
+    res.status(500).json({ error: error.message });
   }
 };
 
+// Function to parse the CSV file
+const parseCSV = (filePath) => {
+  return new Promise((resolve, reject) => {
+    const results = [];
+
+    // Use csv-parser or another library to parse the CSV
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (data) => results.push(data))
+      .on('end', () => resolve(results))
+      .on('error', (error) => reject(error));
+  });
+};
+
+
 // Get a list of expenses with filters, sorting, and pagination
 const getExpenses = async (req, res, next) => {
-    try {
-      const {
-        category,
-        paymentMethod,
-        startDate,
-        endDate,
-        sortBy = 'createdAt',
-        order = 'desc',
-        page = 1,
-        limit = 10,
-      } = req.query;
-  
-      const userId = req.user.id;
-  
-      // Construct filters for database query
-      const filters = { user: userId };
-  
-      if (category) filters.category = category;
-      if (paymentMethod) filters.paymentMethod = paymentMethod;
-      if (startDate && endDate) {
-        filters.createdAt = {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate),
-        };
-      }
-  
-      // Pagination settings
-      const skip = (page - 1) * limit;
-      const sortOrder = order === 'asc' ? 1 : -1;
-  
-      // Generate the cache key based on the query parameters
-      const cacheKey = generateCacheKey(req.query);
-  
-      // Check if data is cached
-      const cachedData = await getAsync(cacheKey);
-      if (cachedData) {
-        // If data is found in Redis cache, return it
-        return res.status(200).json(JSON.parse(cachedData));
-      }
-  
-      // Query the database for expenses
-      const expenses = await Expense.find(filters)
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit);
-  
-      // Get the total number of expenses matching the filters
-      const totalExpenses = await Expense.countDocuments(filters);
-  
-      // Paginated response
-      const responseData = {
-        total: totalExpenses,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        data: expenses,
-      };
-  
-      // Cache the result in Redis with a TTL of 1 hour (3600 seconds)
-      redisClient.setex(cacheKey, 3600, JSON.stringify(responseData));
-  
-      // Return the response
-      res.status(200).json(responseData);
-    } catch (err) {
-      next(err);
-    }
+  const {
+    category,
+    paymentMethod,
+    startDate,
+    endDate,
+    sortBy = 'createdAt',
+    order = 'desc',
+    page = 1,
+    limit = 10,
+  } = req.query;
+
+  const userId = req.user.id;
+
+  // Construct filters for the database query
+  const filters = { user: userId };
+
+  if (category) filters.category = category;
+  if (paymentMethod) filters.paymentMethod = paymentMethod;
+  if (startDate && endDate) {
+    filters.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
+  // Pagination settings
+  const skip = (page - 1) * limit;
+  const sortOrder = order === 'asc' ? 1 : -1;
+
+  // Function to query the database for expenses
+  const getFromDatabase = async () => {
+    const expenses = await Expense.find(filters)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+
+    const totalExpenses = await Expense.countDocuments(filters);
+
+    return {
+      total: totalExpenses,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      data: expenses,
+    };
+  };
+    // Use the cache function with fallback to the database
+    getExpensesFromCache(req, res, next, getFromDatabase);
   };
 
 // Update an existing expense
@@ -228,30 +248,57 @@ const deleteSingleExpense = async (req, res, next) => {
 };
 
 // Get statistics
+
+
+
+
+
 const getStatistics = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = new mongoose.Types.ObjectId(req.user.id);
 
-    const stats = await Expense.aggregate([
-      { $match: { user: userId } },
+    const startOfMonth = moment.utc().startOf('month').toDate();
+    const endOfMonth = moment.utc().endOf('month').toDate();
+
+    const expenses = await Expense.find({
+      user: userId,
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+    });
+
+    const aggregatedStats = await Expense.aggregate([
+      {
+        $match: {
+          user: userId,
+          createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+        }
+      },
       {
         $group: {
-          _id: {
-            month: { $month: "$createdAt" },
-            year: { $year: "$createdAt" },
-          },
+          _id: null,
           totalAmount: { $sum: "$amount" },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { "_id.year": -1, "_id.month": -1 } },
+          count: { $sum: 1 }
+        }
+      }
     ]);
 
-    res.status(200).json({ data: stats });
+    if (aggregatedStats.length === 0) {
+      console.log('No aggregated statistics found for the user in the current month.');
+    }
+
+    return res.status(200).json({
+      expenses,
+      aggregatedStats: aggregatedStats.length > 0 ? aggregatedStats[0] : null
+    });
   } catch (err) {
+    console.error('Error occurred:', err);
     next(err);
   }
 };
+
+
+
+
+
 
 module.exports = {
   addExpense,
@@ -260,6 +307,7 @@ module.exports = {
   updateExpense,
   deleteManyExpense,
   deleteSingleExpense,
+
 
   getStatistics,
 };
