@@ -1,5 +1,10 @@
 /**
+<<<<<<< HEAD
  
+=======
+ * 
+ * 
+>>>>>>> 7e538c81521a170f17d47f4709767a6592ab57c0
  * @swagger
  * components:
  *   schemas:
