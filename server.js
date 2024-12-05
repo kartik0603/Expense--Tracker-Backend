@@ -23,6 +23,19 @@ const swaggerJsDoc = require("swagger-jsdoc");
 const redisClient = require("./utils/redisClient.js");
 
 
+const app = express();
+// Middleware
+app.use(morgan("combined"));
+app.use(helmet());
+app.use(cors());
+app.use(bodyParser.json());
+
+setupSwagger(app);
+
+app.use("/api/expenses", expenseRouter);
+app.use("/api/users", userRouter);
+
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -41,40 +54,9 @@ const options = {
   apis: ["./routes/*.js"], 
 };
 
-
-// Middleware
-const app = express();
-app.use(morgan("combined"));
-app.use(helmet());
-app.use(cors());
-app.use(bodyParser.json());
-
-setupSwagger(app);
-
-app.use("/api/expenses", expenseRouter);
-app.use("/api/users", userRouter);
-
+// Middleware to serve Swagger UI
 const specs = swaggerJsDoc(options);
-
-
-
-// Middleware to dynamically set the server URL
-app.use(
-  "/api-docs",
-  (req, res, next) => {
-    if (!options.definition.servers.length) {
-      const protocol = req.protocol;
-      const host = req.get("host");
-      options.definition.servers.push({
-        url: `${protocol}://${host}`,
-        description: "Deployed Server",
-      });
-    }
-    next();
-  },
-  swaggerUi.serve,
-  swaggerUi.setup(specs)
-);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 
 

@@ -23,14 +23,14 @@ const getExpensesFromCache = async (req, res, next, getFromDatabase) => {
       }
     }
 
-    // If no cached data, fallback to database query
+   
     console.log("Fetching from database");
     const expensesData = await getFromDatabase();
     const responseData = expensesData;
 
     // Cache the result in Redis if available
     if (isRedisConnected) {
-      redisClient.setex(cacheKey, 3600, JSON.stringify(responseData)); // Cache for 1 hour
+      redisClient.setex(cacheKey, 3600, JSON.stringify(responseData)); 
     }
 
     return res.status(200).json(responseData);
