@@ -12,17 +12,16 @@ const moment = require('moment-timezone');
 
 
 
-// Add a new expense
+// Add  New expense
 const addExpense = async (req, res, next) => {
   try {
     const { title, amount, category, paymentMethod } = req.body;
 
-    // Validate input fields
+    
     if (!title || !amount || !category || !paymentMethod) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Create a new expense entry
     const expense = new Expense({
       title,
       amount,
@@ -31,7 +30,7 @@ const addExpense = async (req, res, next) => {
       user: req.user.id,
     });
 
-    // Save the expense to the database
+  
     await expense.save();
 
     res
@@ -42,41 +41,41 @@ const addExpense = async (req, res, next) => {
   }
 };
 
-// Bulk upload expenses from a CSV file
+// Bulk upload expenses  CSV File
 
-// Function to sanitize rows, ensuring there are no extra spaces
+// no Extra Space in Rows
 const sanitizeRow = (row) => {
   return Object.keys(row).reduce((acc, key) => {
-    acc[key] = row[key] ? row[key].trim() : ''; // Remove extra spaces from values
+    acc[key] = row[key] ? row[key].trim() : ''; 
     return acc;
   }, {});
 };
 
-// Bulk upload function for expenses
+// Bulk upload  Expenses
 const bulkUploadExpenses = async (req, res) => {
   try {
-    // Parse the CSV file
+  
     const expenses = await parseCSV(req.file.path); 
 
-    // Process each expense
+    
     const formattedExpenses = expenses.map((exp) => {
       // console.log(exp); 
 
-      // Sanitize the row data
+      
       const sanitizedExp = sanitizeRow(exp);
 
-      // Validate required fields
+     
       if (!sanitizedExp.Name || !sanitizedExp.Amount || !sanitizedExp.Category || !sanitizedExp.PaymentMethod) {
         throw new Error("CSV contains invalid or missing fields");
       }
 
-      // Ensure the Amount is a valid number (parse it to float)
+
       const amount = parseFloat(sanitizedExp.Amount);
       if (isNaN(amount)) {
         throw new Error(`Invalid amount value: ${sanitizedExp.Amount}`);
       }
 
-      // Return the formatted expense object for further processing
+     
       return {
         title: sanitizedExp.Name, 
         amount: amount, 
@@ -89,22 +88,22 @@ const bulkUploadExpenses = async (req, res) => {
     // await Expense.insertMany(formattedExpenses);
 
 
-    // Respond with success message
+   
     res.status(200).json({ message: 'Expenses uploaded successfully', data: formattedExpenses });
 
   } catch (error) {
     console.error(error);
-    // Return an error response
+   
     res.status(500).json({ error: error.message });
   }
 };
 
-// Function to parse the CSV file
+// Parsing the CSV File
 const parseCSV = (filePath) => {
   return new Promise((resolve, reject) => {
     const results = [];
 
-    // Use csv-parser or another library to parse the CSV
+   
     fs.createReadStream(filePath)
       .pipe(csv())
       .on('data', (data) => results.push(data))
@@ -114,7 +113,7 @@ const parseCSV = (filePath) => {
 };
 
 
-// Get a list of expenses with filters, sorting, and pagination
+// Get  expenses 
 const getExpenses = async (req, res, next) => {
   const {
     category,
@@ -129,7 +128,7 @@ const getExpenses = async (req, res, next) => {
 
   const userId = req.user.id;
 
-  // Construct filters for the database query
+  
   const filters = { user: userId };
 
   if (category) filters.category = category;
@@ -141,11 +140,11 @@ const getExpenses = async (req, res, next) => {
     };
   }
 
-  // Pagination settings
+  
   const skip = (page - 1) * limit;
   const sortOrder = order === 'asc' ? 1 : -1;
 
-  // Function to query the database for expenses
+  // Query the Database  expenses
   const getFromDatabase = async () => {
     const expenses = await Expense.find(filters)
       .sort({ [sortBy]: sortOrder })
@@ -161,7 +160,7 @@ const getExpenses = async (req, res, next) => {
       data: expenses,
     };
   };
-    // Use the cache function with fallback to the database
+    
     getExpensesFromCache(req, res, next, getFromDatabase);
   };
 
@@ -175,7 +174,7 @@ const updateExpense = async (req, res, next) => {
       return res.status(400).json({ message: "No data provided for update" });
     }
 
-    // Update the expense in the database
+    // Update  expense in  Database
     const expense = await Expense.findOneAndUpdate(
       { _id: id, user: req.user.id },
       updates,
@@ -248,11 +247,6 @@ const deleteSingleExpense = async (req, res, next) => {
 };
 
 // Get statistics
-
-
-
-
-
 const getStatistics = async (req, res, next) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user.id);

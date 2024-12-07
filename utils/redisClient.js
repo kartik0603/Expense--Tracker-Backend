@@ -1,10 +1,8 @@
-const { createClient } = require('redis'); // Import the Redis client
-const dotenv = require('dotenv');  // Load environment variables
+const { createClient } = require('redis'); 
+require('dotenv').config();
 
-// Load environment variables from the .env file
-dotenv.config();
 
-// Define the Redis connection configuration
+//  Redis connection 
 const redisClient =  createClient({
   password: 'xnq05MFRPl66nxfTqenE6lWhbjO20fDv',
   socket: {
@@ -17,7 +15,7 @@ const redisClient =  createClient({
 
 let isRedisConnected = false;
 
-// Connect to Redis and handle any connection issues
+// Connect Redis 
 redisClient.connect()
   .then(() => {
     isRedisConnected = true;
@@ -28,19 +26,18 @@ redisClient.connect()
     console.error('Redis connection error:', err);
   });
 
-// Handle Redis client errors
 redisClient.on('error', (err) => {
   console.error('Redis Client Error:', err);
 });
 
-// Graceful shutdown (optional but good practice)
+// shutdown 
 process.on('SIGINT', () => {
-  console.log('Gracefully shutting down Redis client...');
+  console.log('shutting down Redis client...');
   redisClient.quit(() => {
     console.log('Redis client closed.');
-    process.exit(0);  // Ensure the app exits after closing Redis client
+    process.exit(0);  ient
   });
 });
 
-// Export the Redis client for use throughout the app
+
 module.exports = { redisClient, isRedisConnected };

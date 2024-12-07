@@ -15,11 +15,11 @@ const expenseRouter = require("./routes/expense.route.js");
 const userRouter = require("./routes/user.route.js");
 
 const swaggerJsDoc = require("swagger-jsdoc");
-// const swaggerUi = require("swagger-ui-express");
 
 
 
-// Import Redis client
+
+
 const redisClient = require("./utils/redisClient.js");
 
 
@@ -54,7 +54,7 @@ const options = {
   apis: ["./routes/*.js"], 
 };
 
-// Middleware to serve Swagger UI
+// serve Swagger UI
 const specs = swaggerJsDoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
@@ -68,7 +68,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Graceful shutdown logic
+// shutdown 
 const shutdown = (signal) => {
   console.log(`Received ${signal}. Closing HTTP server gracefully.`);
 
@@ -88,11 +88,11 @@ const shutdown = (signal) => {
   }
 };
 
-// Handle termination signals for graceful shutdown
+//  termination Signal  shutdown
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
-// Catch unhandled rejections (useful for production)
+// unhandled Rejections 
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection:", err);
   process.exit(1);

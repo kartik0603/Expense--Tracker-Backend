@@ -4,17 +4,17 @@ const { redisClient, isRedisConnected } = require("./redisClient");
 const { promisify } = require("util");
 const getAsync = promisify(redisClient.get).bind(redisClient);
 
-// Helper function to generate a cache key based on query parameters
+//  generate a cache key based on query parameters
 const generateCacheKey = (queryParams) => {
   return `expenses:${JSON.stringify(queryParams)}`;
 };
 
-// Function to get expenses from Redis or fallback to database
+//  Get expenses from Redis 
 const getExpensesFromCache = async (req, res, next, getFromDatabase) => {
   try {
     const cacheKey = generateCacheKey(req.query);
 
-    // If Redis is connected, attempt to fetch from Redis cache
+    //  Fetch from Redis cache
     if (isRedisConnected) {
       const cachedData = await getAsync(cacheKey);
       if (cachedData) {
@@ -28,7 +28,7 @@ const getExpensesFromCache = async (req, res, next, getFromDatabase) => {
     const expensesData = await getFromDatabase();
     const responseData = expensesData;
 
-    // Cache the result in Redis if available
+   
     if (isRedisConnected) {
       redisClient.setex(cacheKey, 3600, JSON.stringify(responseData)); 
     }

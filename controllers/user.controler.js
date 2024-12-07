@@ -12,28 +12,28 @@ const { hashPassword, comparePassword } = require("../secure/hashPassword.js");
 const register = async (req, res) => {
     const { name, email, password, role } = req.body;
   
-    // Basic validation
+   
     if (!email || !password || !name || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
   
-    // Validate email format using a simple regex pattern
+   
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
   
     try {
-      // Check if user already exists
+      
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
   
-      // Hash the password before saving
+      
       const hashedPassword = await hashPassword(password);
   
-      // Create the user
+      
       const user = await User.create({
         name,
         email,

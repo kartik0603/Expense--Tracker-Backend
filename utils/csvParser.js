@@ -7,7 +7,7 @@ const parseCSV = (filePath) => {
   return new Promise((resolve, reject) => {
     const results = [];
 
-    // Validate if the file exists and is a CSV file
+    // the file exists and is a CSV file
     if (!fs.existsSync(filePath)) {
       return reject(new Error("File not found"));
     }
@@ -19,7 +19,7 @@ const parseCSV = (filePath) => {
 
     const readStream = fs.createReadStream(filePath);
 
-    // Handle file read stream errors
+    // Handle file read 
     readStream.on("error", (err) => {
       return reject(new Error(`File read error: ${err.message}`));
     });
@@ -28,19 +28,21 @@ const parseCSV = (filePath) => {
     readStream
       .pipe(csv())
       .on("data", (data) => {
-        //  remove extra spaces or invalid characters
+
+
+        //  Remove extra spaces 
         const sanitizedData = Object.keys(data).reduce((acc, key) => {
           acc[key.trim()] = data[key].trim();
           return acc;
         }, {});
 
-        results.push(sanitizedData); // Collect each sanitized row as an object
+        results.push(sanitizedData); // row as an object
       })
       .on("end", () => {
-        resolve(results); // Return the array of parsed data when finished
+        resolve(results); //  Array of parsed 
       })
       .on("error", (err) => {
-        reject(new Error(`CSV parsing error: ${err.message}`)); // Reject on CSV parsing error
+        reject(new Error(`CSV parsing error: ${err.message}`)); // Reject on CSV 
       });
   });
 };

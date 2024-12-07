@@ -12,13 +12,13 @@ const options = {
     servers: [
       {
         url: process.env.NODE_ENV === "production" 
-          ? "https://expense-tracker-backend-ds3h.onrender.com/api" // Deployed URL for production
-          : "http://localhost:3000/api", // Local URL for development
+          ? "https://expense-tracker-backend-ds3h.onrender.com/api" 
+          : "http://localhost:3000/api", 
         description: "API Server"
       },
     ],
   },
-  apis: ["./routes/*.js"], // This will include both user and expense routes
+  apis: ["./routes/*.js"],
   components: {
     schemas: {
       // User schema
